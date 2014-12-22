@@ -1,5 +1,17 @@
 {
     "name": "phpspore/phpspore",
     "description": "PHP Client for SPORE",
-    "version" : "0.01"
+    "version":"0.01",
+    "type":"library",
+    "keywords":[
+        "spore",
+        "rest"
+    ],
+    "license":"GPL-3.0",
+    "author":{
+        "name":"Nicolas Oudard",
+        "email":"noudard@weborama.com",
+        "homepage":"http://weborama.com",
+        "role":"Manager"
+    }
 }
