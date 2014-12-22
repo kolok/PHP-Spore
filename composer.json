@@ -1,4 +1,5 @@
 {
     "name": "phpspore/phpspore",
-    "description": "PHP Client for SPORE"
+    "description": "PHP Client for SPORE",
+    "version" : "0.01"
 }
