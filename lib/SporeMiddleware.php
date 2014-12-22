@@ -106,9 +106,11 @@ class Spore_Middleware_Weborama_Authentication {
         // add request params
         $string_params = '';
         $params = $spore->getRequestParams();
-        ksort($params);
-        foreach ($params as $key => $val) {
-            $string_params .= "$key=$val";
+        if (isset($params) && !empty($params)) {
+            ksort($params);
+            foreach ($params as $key => $val) {
+                $string_params .= "$key=$val";
+            }
         }
         $this->_signatureString .= $string_params;
 

@@ -1,8 +1,7 @@
 <?php
 
-
+require_once 'Spyc.php';
 require_once 'RESTHttpClient.php';
-
 class Spore_Exception extends Exception {
 
 }
@@ -121,7 +120,8 @@ class Spore {
 					break;
 
 				case 'yaml' :
-					$specs_array = yaml_parse_file($spec_file);
+					//$specs_array = yaml_parse_file($spec_file);
+					$specs_array = Spyc::YAMLLoad($spec_file);
 					return $specs_array;
 					break;
 
@@ -196,16 +196,16 @@ class Spore {
 		$rest_response = null;
 		switch (strtoupper($this->_request_method)) {
 			case 'POST' :
-				$rest_response = $this->_performPost('POST', $this->_request_path, $this->_request_raw_params);
+				$rest_response = $this->_performSporePost($this->_request_path, $this->_request_raw_params);
 				break;
 			case 'PUT' :
-				$rest_response = $this->_performPost('PUT', $this->_request_path, $this->_request_raw_params);
+				$rest_response = $this->_performSporePut($this->_request_path, $this->_request_raw_params);
 				break;
 			case 'DELETE' :
-				$rest_response = $this->_performDelete($this->_request_path, $this->_request_params);
+				$rest_response = $this->_performSporeDelete($this->_request_path, $this->_request_params);
 				break;
 			case 'GET' :
-				$rest_response = $this->_performGet($this->_request_path, $this->_request_params);
+				$rest_response = $this->_performSporeGet($this->_request_path, $this->_request_params);
 				break;
 
 			default :
@@ -259,7 +259,7 @@ class Spore {
 	}
 
 	protected function _insertParam($param, $value) {
-		if (empty ($value))
+		if ($value != 0 && empty ($value))
 			return;
 
 		if (strstr($this->_request_path, ":$param")) {
@@ -273,9 +273,11 @@ class Spore {
 
 	protected function _setRawParams($params = array ()) {
 		$raw_params = '';
-		foreach ($params as $key => $value) {
-			$raw_params .= empty ($raw_params) ? '' : '&';
-			$raw_params .= "$key=$value";
+		if (isset($params) && !empty($params)) {
+		    foreach ($params as $key => $value) {
+			    $raw_params .= empty ($raw_params) ? '' : '&';
+			    $raw_params .= "$key=$value";
+		    }
 		}
 		$this->_request_raw_params = $raw_params;
 	}
@@ -301,16 +303,23 @@ class Spore {
 	 * Use our own performPost() for PUT/POST method, since Zend_Rest_Client's restPut() always reset the
 	 * content-type header that we have set before.
 	 */
-	protected function _performPost($method, $path, $data = null) {
+	protected function _performSporePost( $path, $data = null) {
 		// set content-type
 		$content_type = 'application/x-www-form-urlencoded; charset=utf-8';
 		$this->_setContentType($content_type);
 
 		$client = RESTHttpClient :: getHttpClient();
-		return $client->doPost($path, $data);
+                return $client->doPost($path, $data);
 	}
+	protected function _performSporePut( $path, $data = null) {
+		// set content-type
+		$content_type = 'application/x-www-form-urlencoded; charset=utf-8';
+		$this->_setContentType($content_type);
 
-	protected function _performGet($path, $data = null) {
+		$client = RESTHttpClient :: getHttpClient();
+                return $client->doPut($path, $data);
+	}
+	protected function _performSporeGet($path, $data = null) {
 		$content_type = 'application/x-www-form-urlencoded; charset=utf-8';
 		$this->_setContentType($content_type);
 
@@ -319,9 +328,9 @@ class Spore {
 	}
 
 	/*
-	 * Use our own performDelete() for DELETE method, since restDelete() doesn't have any $query parameter
+	 * Use our own performDelete() for DELETE method, since restDelete() doesn't have any $data parameter
 	 */
-	protected function _performDelete($path, array $query = null) {
+	protected function _performSporeDelete($path, array $data = null) {
 		// set content-type
 		$content_type = 'application/x-www-form-urlencoded; charset=utf-8';
 		$this->_setContentType($content_type);
@@ -335,6 +344,9 @@ class Spore {
 	 */
 	public function setResponse($rest_response) {
 		$client = RESTHttpClient :: getHttpClient();
+		if (!isset($this->_response)) {
+            $this->_response = new stdClass();
+        }
 		$this->_response->status = $client->getStatus();
 		$this->_response->headers = $client->getHeaders();
 		$this->_response->body = $this->_parseBody($client->getContent());
@@ -422,5 +434,23 @@ class Spore {
 							   "secure" => $secure);
 		$this->_request_cookies[$name] = $cookie_array;
 	}
+
+        /*
+         * recurcive function
+         * object to array get an object and return an array
+         *
+         *   input:  $object (object, array, string)
+         *   output: $array (string, array)
+         */
+        function object_to_array($object) {
+            if (is_array($object) || is_object($object)) {
+                $array = array();
+                foreach ($object as $key => $value) {
+                    $array[$key] = object_to_array($value);
+                }
+                return $array;
+            }
+            return (string)$object;
+        }
 
 }

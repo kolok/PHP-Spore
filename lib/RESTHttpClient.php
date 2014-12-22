@@ -1,12 +1,12 @@
 <?php
 class Http_Exception extends Exception{
-    const NOT_MODIFIED = 304; 
-    const BAD_REQUEST = 400; 
-    const NOT_FOUND = 404; 
-    const NOT_ALOWED = 405; 
-    const CONFLICT = 409; 
-    const PRECONDITION_FAILED = 412; 
-    const INTERNAL_ERROR = 500; 
+    const NOT_MODIFIED = 304;
+    const BAD_REQUEST = 400;
+    const NOT_FOUND = 404;
+    const NOT_ALOWED = 405;
+    const CONFLICT = 409;
+    const PRECONDITION_FAILED = 412;
+    const INTERNAL_ERROR = 500;
 }
 
 class Http_Multiple_Error
@@ -15,7 +15,7 @@ class Http_Multiple_Error
     private $_type   = null;
     private $_url    = null;
     private $_params = null;
-    
+
     function __construct($status, $type, $url, $params)
     {
         $this->_status = $status;
@@ -23,22 +23,22 @@ class Http_Multiple_Error
         $this->_url    = $url;
         $this->_params = $params;
     }
-    
+
     function getStatus()
     {
         return $this->_status;
     }
-    
+
     function getType()
     {
         return $this->_type;
     }
-    
+
     function getUrl()
     {
         return $this->_url;
     }
-    
+
     function getParams()
     {
         return $this->_params;
@@ -59,28 +59,28 @@ class RESTHttpClient
 
     const HTTP  = 'http';
     const HTTPS = 'https';
-    
+
     private $_connMultiple = false;
-    
+
     private static $_httpClient = null;
-    
+
     public static function getHttpClient() {
       if(is_null(self::$_httpClient)) {
         self::$_httpClient = new RESTHttpClient();
       }
         return self::$_httpClient;
     }
-    
+
     public function getStatus()
     {
         return $this->_status;
     }
-    
+
     public function getContent()
     {
         return $this->_content;
     }
-    
+
     public function addCookie($cookie)
     {
         array_push($this->_cookies, $cookie);
@@ -96,13 +96,13 @@ class RESTHttpClient
      * @return Http
      */
 
-    
+
     static public function connect($baseurl)
     {
         self::$_httpClient = new RESTHttpClient($baseurl, false);
         return self::$_httpClient;
     }
-    
+
     /**
      *
      * @return Http
@@ -118,7 +118,7 @@ class RESTHttpClient
         $this->_append[] = $http;
         return $this;
     }
-    
+
     private $_silentMode = false;
     /**
      *
@@ -128,17 +128,17 @@ class RESTHttpClient
     public function silentMode($mode=true)
     {
         $this->_silentMode = $mode;
-        return $this;    
+        return $this;
     }
 
-    
+
     protected function __construct($baseurl, $connMultiple)
     {
         $this->_connMultiple = $connMultiple;
-        
+
         $this->_baseurl     = $baseurl;
     }
-    
+
     public function setCredentials($user, $pass)
     {
         $this->_user = $user;
@@ -152,7 +152,7 @@ class RESTHttpClient
     const PUT    = 'PUT';
 
     private $_requests = array();
-    
+
     /**
      * @param string $url
      * @param array $params
@@ -163,7 +163,7 @@ class RESTHttpClient
         $this->_requests[] = array(self::PUT, $this->_url($url), $params);
         return $this;
     }
-    
+
     /**
      * @param string $url
      * @param array $params
@@ -185,7 +185,7 @@ class RESTHttpClient
         $this->_requests[] = array(self::GET, $this->_url($url), $params);
         return $this;
     }
-    
+
     /**
      * @param string $url
      * @param array $params
@@ -196,12 +196,12 @@ class RESTHttpClient
         $this->_requests[] = array(self::DELETE, $this->_url($url), $params);
         return $this;
     }
-    
+
     public function _getRequests()
     {
         return $this->_requests;
     }
-    
+
     /**
      * PUT request
      *
@@ -213,7 +213,7 @@ class RESTHttpClient
     {
         return $this->_exec(self::PUT, $this->_url($url), $params);
     }
-    
+
     /**
      * POST request
      *
@@ -237,7 +237,7 @@ class RESTHttpClient
     {
         return $this->_exec(self::GET, $this->_url($url), $params);
     }
-    
+
     /**
      * DELETE Request
      *
@@ -262,12 +262,12 @@ class RESTHttpClient
         $this->_headers = $headers;
         return $this;
     }
-    
+
     public function addHeader($header, $value)
     {
       $header_string = "{$header}:{$value}";
       array_push($this->_headers, $header_string);
-      
+
       return $this->_headers;
     }
 
@@ -294,7 +294,7 @@ class RESTHttpClient
       return $this->_headers;
     }
 
-    
+
     public function getHeaders()
     {
         return $this->_headers;
@@ -302,13 +302,13 @@ class RESTHttpClient
 
 
     /**
-     * Builds absolute url 
+     * Builds absolute url
      *
      * @param unknown_type $url
      * @return unknown
      */
     private function _url($url=null)
-    {   
+    {
         return $url;
     }
 
@@ -328,7 +328,8 @@ class RESTHttpClient
     {
         $headers = $this->_headers;
         $s = curl_init();
-        
+        curl_setopt($s, CURLOPT_CAINFO, dirname(__FILE__)."/cacert.pem");
+
         if(!is_null($this->_user)){
            curl_setopt($s, CURLOPT_USERPWD, $this->_user.':'.$this->_pass);
         }
@@ -348,12 +349,16 @@ class RESTHttpClient
                 curl_setopt($s, CURLOPT_POSTFIELDS, $params);
                 break;
             case self::GET:
-                curl_setopt($s, CURLOPT_URL, $url . '?' . http_build_query($params));
+                $query = $params;
+                if (isset($params) && !empty($params)) {
+                    $query = http_build_query($params);
+                }
+                curl_setopt($s, CURLOPT_URL, $url . '?' . $query);
                 break;
         }
-        
+
         $cookies = join('', $this->_cookies);
-        
+
         curl_setopt($s, CURLOPT_COOKIE, $cookies);
         curl_setopt($s, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($s, CURLOPT_HTTPHEADER, $headers);
@@ -376,7 +381,7 @@ class RESTHttpClient
         $this->_content = $out;
         return $out;
     }
-    
+
     public function run()
     {
         if ($this->_connMultiple) {
@@ -385,7 +390,7 @@ class RESTHttpClient
             return $this->_run();
         }
     }
-    
+
     private function _runMultiple()
     {
         $out= null;
@@ -394,13 +399,13 @@ class RESTHttpClient
             foreach ($this->_append as $_append) {
                 $arr = array_merge($arr, $_append->_getRequests());
             }
-            
+
             $this->_requests = $arr;
             $out = $this->_run();
         }
         return $out;
     }
-    
+
     private function _run()
     {
         $headers = $this->_headers;
@@ -409,15 +414,15 @@ class RESTHttpClient
         $mh = curl_multi_init();
         foreach ($this->_requests as $id => $reg) {
             $curly[$id] = curl_init();
-            
+
             $type   = $reg[0];
             $url    = $reg[1];
             $params = $reg[2];
-            
+
             if(!is_null($this->_user)){
                curl_setopt($curly[$id], CURLOPT_USERPWD, $this->_user.':'.$this->_pass);
             }
-            
+
             switch ($type) {
                 case self::DELETE:
                     curl_setopt($curly[$id], CURLOPT_URL, $url . '?' . http_build_query($params));
@@ -439,16 +444,16 @@ class RESTHttpClient
             }
             curl_setopt($curly[$id], CURLOPT_RETURNTRANSFER, true);
             curl_setopt($curly[$id], CURLOPT_HTTPHEADER, $headers);
-            
+
             curl_multi_add_handle($mh, $curly[$id]);
         }
-    
+
         $running = null;
         do {
             curl_multi_exec($mh, $running);
             sleep(0.2);
         } while($running > 0);
-    
+
         foreach($curly as $id => $c) {
             $this->_status = curl_getinfo($c, CURLINFO_HTTP_CODE);
             switch ($this->_status) {
